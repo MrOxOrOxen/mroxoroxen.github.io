@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>云宝的盲盒计数器 - 实时榜单</title>
+    <title>云宝的电池计数器</title>
     <style>
         :root {
             --primary-color: #00f2fe;
@@ -11,6 +11,7 @@
             --card-bg: rgba(30, 41, 59, 0.7);
             --text-main: #e2e8f0;
             --text-dim: #94a3b8;
+            --accent-color: #4facfe;
         }
 
         body {
@@ -26,7 +27,7 @@
 
         .container {
             width: 95%;
-            max-width: 500px;
+            max-width: 550px;
             margin-top: 40px;
             animation: fadeIn 0.8s ease-out;
         }
@@ -53,7 +54,7 @@
             background: var(--card-bg);
             backdrop-filter: blur(12px);
             border-radius: 16px;
-            padding: 15px;
+            padding: 10px;
             border: 1px solid rgba(255, 255, 255, 0.08);
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
         }
@@ -62,24 +63,21 @@
             display: flex;
             align-items: flex-start;
             padding: 15px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             background: rgba(255, 255, 255, 0.03);
             border-radius: 12px;
-            border-left: 3px solid transparent;
-            transition: all 0.2s ease;
-            cursor: pointer;
+            transition: background 0.2s ease;
         }
 
         .row:hover {
-            background: rgba(255, 255, 255, 0.08);
-            border-left-color: var(--primary-color);
+            background: rgba(255, 255, 255, 0.06);
         }
 
         .rank {
             font-family: 'Courier New', monospace;
             font-weight: bold;
             font-size: 1.1rem;
-            width: 40px;
+            width: 35px;
             color: var(--text-dim);
             margin-top: 2px;
         }
@@ -92,21 +90,17 @@
         }
 
         .name {
-            font-size: 1.05rem;
+            font-size: 1.1rem;
             color: var(--text-main);
             font-weight: 500;
         }
 
         .detail-list {
-            display: none; /* 默认隐藏 */
-            font-size: 0.85rem;
-            color: #4facfe;
-            margin-top: 8px;
-            padding: 8px;
-            background: rgba(0, 0, 0, 0.25);
-            border-radius: 6px;
-            line-height: 1.5;
-            animation: slideDown 0.3s ease-out;
+            font-size: 0.8rem;
+            color: var(--accent-color);
+            margin-top: 6px;
+            line-height: 1.4;
+            word-break: break-all;
         }
 
         .battery {
@@ -115,15 +109,12 @@
             font-weight: 600;
             font-size: 1.1rem;
             white-space: nowrap;
+            text-align: right;
+            min-width: 70px;
         }
 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-5px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
@@ -135,7 +126,7 @@
 <body>
 
     <div class="container">
-        <h1>盲盒统计中心</h1>
+        <h1>云宝的电池计数器</h1>
         <div class="status-bar" id="status">同步中...</div>
         
         <div class="leaderboard" id="leaderboard">
@@ -151,59 +142,51 @@
                 if (!response.ok) throw new Error('网络请求异常');
                 const data = await response.json();
                 
-                // 数据排序：根据 total_batteries 从高到低
+                // 按总电池数从大到小排序
                 const sortedList = data.sort((a, b) => b.total_batteries - a.total_batteries);
 
                 const container = document.getElementById('leaderboard');
                 const status = document.getElementById('status');
 
                 if (sortedList.length === 0) {
-                    container.innerHTML = '<div style="text-align:center;padding:40px;color:#64748b;">暂无投喂数据</div>';
+                    container.innerHTML = '<div style="text-align:center;padding:40px;color:#64748b;">暂无数据记录</div>';
                 } else {
                     container.innerHTML = sortedList.map((user, index) => {
-                        // 转换礼物明细对象为字符串
-                        let giftDetails = "暂无详细记录";
+                        // 提取礼物清单
+                        let giftDetails = "";
                         if (user.gift_list && Object.keys(user.gift_list).length > 0) {
                             giftDetails = Object.entries(user.gift_list)
                                 .map(([name, count]) => `${name} x${count}`)
-                                .join(' | ');
+                                .join(' / ');
+                        } else {
+                            giftDetails = "无礼物详情";
                         }
 
                         return `
-                            <div class="row" onclick="toggleDetail(this)">
+                            <div class="row">
                                 <div class="rank">${String(index + 1).padStart(2, '0')}</div>
                                 <div class="name-group">
                                     <div class="name">${user.uname}</div>
                                     <div class="detail-list">
-                                        🎁 明细：${giftDetails}
+                                        ${giftDetails}
                                     </div>
                                 </div>
-                                <div class="battery">${user.total_batteries} ⚡</div>
+                                <div class="battery">${user.total_batteries}</div>
                             </div>
                         `;
                     }).join('');
                 }
 
-                status.innerText = `最后更新: ${new Date().toLocaleTimeString()} (点击行查看明细)`;
+                status.innerText = `最后更新: ${new Date().toLocaleTimeString()} (自动同步中)`;
             } catch (error) {
                 console.error("Fetch Error:", error);
-                document.getElementById('status').innerText = "数据同步异常，请检查云端状态";
-            }
-        }
-
-        // 点击切换明细显示的函数
-        function toggleDetail(element) {
-            const detail = element.querySelector('.detail-list');
-            if (detail.style.display === 'block') {
-                detail.style.display = 'none';
-            } else {
-                detail.style.display = 'block';
+                document.getElementById('status').innerText = "同步异常，请检查后端状态";
             }
         }
 
         // 初始加载
         updateData();
-        // 每 10 秒刷新
+        // 每 10 秒刷新一次
         setInterval(updateData, 10000);
     </script>
 </body>
