@@ -142,17 +142,24 @@
                 if (!response.ok) throw new Error('网络请求异常');
                 const data = await response.json();
                 
-                // 按总电池数从大到小排序
-                const sortedList = data.sort((a, b) => b.total_batteries - a.total_batteries);
-
                 const container = document.getElementById('leaderboard');
                 const status = document.getElementById('status');
 
-                if (sortedList.length === 0) {
-                    container.innerHTML = '<div style="text-align:center;padding:40px;color:#64748b;">暂无数据记录</div>';
+                // --- 核心修复逻辑 ---
+                // 检查 data 是否为数组。如果 API 返回的是 {"status":...} 对象，Array.isArray 会返回 false
+                if (!Array.isArray(data)) {
+                    container.innerHTML = '<div style="text-align:center;padding:40px;color:#64748b;">还没有礼物</div>';
+                    status.innerText = `最后更新: ${new Date().toLocaleTimeString()} (等待数据同步)`;
+                    return; // 终止后续排序逻辑，防止报错
+                }
+
+                if (data.length === 0) {
+                    container.innerHTML = '<div style="text-align:center;padding:40px;color:#64748b;">还没有礼物</div>';
                 } else {
+                    // 只有确定是数组且有内容时，才执行排序
+                    const sortedList = data.sort((a, b) => b.total_batteries - a.total_batteries);
+                    
                     container.innerHTML = sortedList.map((user, index) => {
-                        // 提取礼物清单
                         let giftDetails = "";
                         if (user.gift_list && Object.keys(user.gift_list).length > 0) {
                             giftDetails = Object.entries(user.gift_list)
