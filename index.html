@@ -119,10 +119,23 @@
             try {
                 const response = await fetch(API_URL);
                 if (!response.ok) throw new Error('Network response was not ok');
-                const data = await response.json();
+                let data = await response.json();
                 
+                // 调试：如果你在浏览器按 F12 看到这个，就能知道数据长啥样
+                console.log("Raw Data:", data);
+
+                // 智能转换：确保我们拿到的是数组格式
                 const sortedList = Object.entries(data)
-                    .map(([name, battery]) => ({ name, battery }))
+                    .map(([name, value]) => {
+                        // 核心修复：如果 value 是个对象，尝试取它的 count 或 num 属性，否则强制转数字
+                        let batteryCount = 0;
+                        if (typeof value === 'object' && value !== null) {
+                            batteryCount = value.count || value.battery || value.num || 0;
+                        } else {
+                            batteryCount = parseInt(value) || 0;
+                        }
+                        return { name, battery: batteryCount };
+                    })
                     .sort((a, b) => b.battery - a.battery);
 
                 const container = document.getElementById('leaderboard');
