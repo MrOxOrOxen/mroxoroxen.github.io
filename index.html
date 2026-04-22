@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>心动盲盒模拟器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "微软雅黑", sans-serif;
+        }
+
+        body {
+            background-color: #fff;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .title {
+            font-size: 18px;
+            font-weight: bold;
+            color: red;
+            margin: 10px 0;
+        }
+
+        .tip {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .input-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 15px 0;
+        }
+
+        .input-box label {
+            font-size: 14px;
+        }
+
+        .input-box input {
+            padding: 5px 8px;
+            font-size: 14px;
+            width: 100px;
+        }
+
+        button {
+            padding: 6px 20px;
+            font-size: 14px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #result {
+            width: 620px;
+            height: 500px;
+            background-color: #f0f0f0;
+            padding: 10px;
+            font-family: Consolas, monospace;
+            font-size: 13px;
+            border: 1px solid #ccc;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="title">心动盲盒模拟器</div>
+    <div class="tip">说明：用户一定不会在这个模拟器里回本。</div>
+
+    <div class="input-box">
+        <label>输入抽取次数：</label>
+        <input type="text" id="times" value="100">
+    </div>
+
+    <button onclick="startDraw()">抽取</button>
+
+    <div id="result"></div>
+
+    <script>
+        // 奖品配置 1:1 复刻原Python代码
+        const itemsInfo = {
+            "浪漫城堡": 22330,
+            "神驹宝玺": 2000,
+            "时空之站": 1000,
+            "绮彩权杖": 400,
+            "爱心抱枕": 160,
+            "棉花糖": 90
+        };
+        const items = Object.keys(itemsInfo);
+        // 权重 1:1 复刻
+        const weights = [0.0001, 0.001, 0.01, 0.1, 5, 94];
+
+        // 带权重的随机选择函数（对应Python random.choices）
+        function randomChoice(items, weights) {
+            let totalWeight = weights.reduce((a, b) => a + b, 0);
+            let random = Math.random() * totalWeight;
+            for (let i = 0; i < items.length; i++) {
+                random -= weights[i];
+                if (random <= 0) return items[i];
+            }
+            return items[items.length - 1];
+        }
+
+        function startDraw() {
+            const resultDom = document.getElementById('result');
+            const timesInput = document.getElementById('times').value.trim();
+            resultDom.textContent = ''; // 清空结果
+
+            // 输入校验 1:1 复刻
+            let times;
+            try {
+                times = parseInt(timesInput);
+                if (times <= 0 || isNaN(times)) {
+                    resultDom.textContent = "抽取次数必须大于0！\n";
+                    return;
+                }
+            } catch (e) {
+                resultDom.textContent = "请输入有效的数字！\n";
+                return;
+            }
+
+            // 统计变量初始化
+            let totalCost = 0;
+            let totalProfit = 0;
+            let itemCount = {};
+            items.forEach(item => itemCount[item] = 0);
+
+            let output = `===== 模拟${times}次抽取 =====\n\n`;
+
+            // 核心抽取循环
+            for (let i = 0; i < times; i++) {
+                totalCost += 150; // 每次成本150
+                
+                // 1. 权重随机候选奖品
+                let candidate = randomChoice(items, weights);
+                
+                // 2. 熔断判定：总收益+候选 > 总成本*0.8 → 强制棉花糖
+                if ((totalProfit + itemsInfo[candidate]) > (totalCost * 0.8)) {
+                    candidate = "棉花糖";
+                }
+                
+                // 3. 二次概率判定：高价值奖品双重锁死
+                if (itemsInfo[candidate] >= 1000 && Math.random() > 0.001) {
+                    candidate = "棉花糖";
+                }
+
+                // 更新统计数据
+                let battery = itemsInfo[candidate];
+                totalProfit += battery;
+                itemCount[candidate]++;
+
+                // 次数≤100实时显示
+                if (times <= 100) {
+                    output += `第${i+1}抽：抽到【${candidate}】(${battery}电池)\n`;
+                }
+            }
+
+            // 最终统计报告
+            output += "\n" + "=".repeat(50) + "\n";
+            output += "【抽取报告】\n";
+            items.forEach(item => {
+                if (itemCount[item] > 0) {
+                    output += `  ${item.padEnd(6)} × ${itemCount[item]}个\n`;
+                }
+            });
+
+            let profit = totalProfit - totalCost;
+            output += `\n总投入：${totalCost} 电池`;
+            output += `\n总产出：${totalProfit} 电池`;
+            output += `\n净收益：${profit} 电池\n`;
+
+            // 渲染结果
+            resultDom.textContent = output;
+            // 滚动到底部
+            resultDom.scrollTop = resultDom.scrollHeight;
+        }
+    </script>
+</body>
+</html>
