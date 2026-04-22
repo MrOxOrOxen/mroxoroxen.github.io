@@ -9,6 +9,8 @@
             --primary-color: #00f2fe;
             --bg-color: #0f172a;
             --card-bg: rgba(30, 41, 59, 0.7);
+            --text-main: #e2e8f0;
+            --text-dim: #94a3b8;
         }
 
         body {
@@ -34,6 +36,7 @@
             letter-spacing: 2px;
             background: linear-gradient(to right, #fff, var(--primary-color));
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
             font-size: 2.2rem;
             margin-bottom: 5px;
@@ -42,7 +45,7 @@
         .status-bar {
             text-align: center;
             font-size: 0.85rem;
-            color: #64748b;
+            color: var(--text-dim);
             margin-bottom: 25px;
         }
 
@@ -57,17 +60,18 @@
 
         .row {
             display: flex;
-            align-items: center;
-            padding: 12px 16px;
-            margin-bottom: 8px;
+            align-items: flex-start;
+            padding: 15px;
+            margin-bottom: 10px;
             background: rgba(255, 255, 255, 0.03);
-            border-radius: 10px;
+            border-radius: 12px;
             border-left: 3px solid transparent;
             transition: all 0.2s ease;
+            cursor: pointer;
         }
 
         .row:hover {
-            background: rgba(255, 255, 255, 0.07);
+            background: rgba(255, 255, 255, 0.08);
             border-left-color: var(--primary-color);
         }
 
@@ -75,25 +79,51 @@
             font-family: 'Courier New', monospace;
             font-weight: bold;
             font-size: 1.1rem;
-            width: 45px;
-            color: #94a3b8; /* 统一颜色 */
+            width: 40px;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        .name-group {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            padding-right: 10px;
         }
 
         .name {
-            flex-grow: 1;
             font-size: 1.05rem;
-            color: #e2e8f0;
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        .detail-list {
+            display: none; /* 默认隐藏 */
+            font-size: 0.85rem;
+            color: #4facfe;
+            margin-top: 8px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 6px;
+            line-height: 1.5;
+            animation: slideDown 0.3s ease-out;
         }
 
         .battery {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             color: var(--primary-color);
             font-weight: 600;
-            font-size: 1rem;
+            font-size: 1.1rem;
+            white-space: nowrap;
         }
 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-5px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
@@ -106,7 +136,7 @@
 
     <div class="container">
         <h1>盲盒统计中心</h1>
-        <div class="status-bar" id="status">数据链路建立中...</div>
+        <div class="status-bar" id="status">同步中...</div>
         
         <div class="leaderboard" id="leaderboard">
             </div>
@@ -118,49 +148,62 @@
         async function updateData() {
             try {
                 const response = await fetch(API_URL);
-                if (!response.ok) throw new Error('Network response was not ok');
-                let data = await response.json();
+                if (!response.ok) throw new Error('网络请求异常');
+                const data = await response.json();
                 
-                // 调试：如果你在浏览器按 F12 看到这个，就能知道数据长啥样
-                console.log("Raw Data:", data);
-
-                // 智能转换：确保我们拿到的是数组格式
-                const sortedList = Object.entries(data)
-                    .map(([name, value]) => {
-                        // 核心修复：如果 value 是个对象，尝试取它的 count 或 num 属性，否则强制转数字
-                        let batteryCount = 0;
-                        if (typeof value === 'object' && value !== null) {
-                            batteryCount = value.count || value.battery || value.num || 0;
-                        } else {
-                            batteryCount = parseInt(value) || 0;
-                        }
-                        return { name, battery: batteryCount };
-                    })
-                    .sort((a, b) => b.battery - a.battery);
+                // 数据排序：根据 total_batteries 从高到低
+                const sortedList = data.sort((a, b) => b.total_batteries - a.total_batteries);
 
                 const container = document.getElementById('leaderboard');
                 const status = document.getElementById('status');
 
                 if (sortedList.length === 0) {
-                    container.innerHTML = '<div style="text-align:center;padding:40px;color:#64748b;">等待投喂中...</div>';
+                    container.innerHTML = '<div style="text-align:center;padding:40px;color:#64748b;">暂无投喂数据</div>';
                 } else {
-                    container.innerHTML = sortedList.map((user, index) => `
-                        <div class="row">
-                            <div class="rank">${String(index + 1).padStart(2, '0')}</div>
-                            <div class="name">${user.name}</div>
-                            <div class="battery">${user.battery} ⚡</div>
-                        </div>
-                    `).join('');
+                    container.innerHTML = sortedList.map((user, index) => {
+                        // 转换礼物明细对象为字符串
+                        let giftDetails = "暂无详细记录";
+                        if (user.gift_list && Object.keys(user.gift_list).length > 0) {
+                            giftDetails = Object.entries(user.gift_list)
+                                .map(([name, count]) => `${name} x${count}`)
+                                .join(' | ');
+                        }
+
+                        return `
+                            <div class="row" onclick="toggleDetail(this)">
+                                <div class="rank">${String(index + 1).padStart(2, '0')}</div>
+                                <div class="name-group">
+                                    <div class="name">${user.uname}</div>
+                                    <div class="detail-list">
+                                        🎁 明细：${giftDetails}
+                                    </div>
+                                </div>
+                                <div class="battery">${user.total_batteries} ⚡</div>
+                            </div>
+                        `;
+                    }).join('');
                 }
 
-                status.innerText = `最后更新: ${new Date().toLocaleTimeString()} (每10s自动同步)`;
+                status.innerText = `最后更新: ${new Date().toLocaleTimeString()} (点击行查看明细)`;
             } catch (error) {
                 console.error("Fetch Error:", error);
                 document.getElementById('status').innerText = "数据同步异常，请检查云端状态";
             }
         }
 
+        // 点击切换明细显示的函数
+        function toggleDetail(element) {
+            const detail = element.querySelector('.detail-list');
+            if (detail.style.display === 'block') {
+                detail.style.display = 'none';
+            } else {
+                detail.style.display = 'block';
+            }
+        }
+
+        // 初始加载
         updateData();
+        // 每 10 秒刷新
         setInterval(updateData, 10000);
     </script>
 </body>
