@@ -92,6 +92,19 @@ server {
 }
 ```
 
+其中，location /指令是控制ui界面的，location /data指令用来访问json数据。也就是说：
+
+以下网址可以访问到ui界面：
+
+https://yqz.mroxoroxen.com
+
+以下网址可以访问到底层的json文件：
+
+https://yqz.mroxoroxen.com/data
+
+其中，/data为人为规定好的python, Nginx与HTML的通讯词。
+
+
 激活配置：
 
 ```
