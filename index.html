@@ -81,15 +81,15 @@
 <body>
 
 <div id="container">
-    <h1>🎁 盲盒姬统计排行榜</h1>
+    <h1>云宝的电池统计</h1>
     <div id="leaderboard">
-        <p class="status-msg">正在连接杭州服务器获取数据...</p>
+        <p class="status-msg">正在连接服务器获取数据...</p>
     </div>
 </div>
 
 <script>
     // 【重要】请把这里的 IP 地址换成你的阿里云公网 IP
-    const API_URL = "http://8.136.21.51:8000/data";
+    const API_URL = "https://yqz.mroxoroxen.com/data";
 
     async function updateLeaderboard() {
         try {
@@ -100,7 +100,7 @@
             const container = document.getElementById('leaderboard');
             
             if (!data || data.length === 0) {
-                container.innerHTML = '<p class="status-msg">目前还没有收到盲盒礼物数据哦~</p>';
+                container.innerHTML = '<p class="status-msg">目前还没有收到礼物哦</p>';
                 return;
             }
 
