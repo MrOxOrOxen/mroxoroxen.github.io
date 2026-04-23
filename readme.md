@@ -1,10 +1,16 @@
 # logs
 
+## Apr 23, 2026
+
+修改部分文件名称：
+
+- boxlive_v2.py更新为boxlive.py，优化IO读写逻辑，整合了api_server.py的程序功能；
+- gift_ledger.json更新为gift.json，内容无实质性变化。
+- api_server.py已被废弃。
+
 ## Apr 22, 2026
 
 ### 哔哩哔哩直播间电池计数器
-
-**写在前面：该项目受服务器性能限制，仅能在短时间内运行，时间过长会直接崩溃！**
 
 本项目源于我的另一个仓库的"哔哩哔哩直播间弹幕互动盲盒查询工具" ([boxlive](https://github.com/MrOxOrOxen/yqz/tree/boxlive))。其能够自动统计直播间用户的电池投喂情况（礼物、盲盒、SC、大航海），并在网页端实时展示排名、用户名、总投喂电池数量及礼物详细信息。
 
@@ -14,7 +20,6 @@
 - api_server.py: 后端接口程序，读取json文件并将结果通过HTTP接口暴露给前端
 - index.html: 前端程序，HTML5+CSS3+Javascript
 - gift_ledger.json: 存储所有用户电池汇总信息的动态数据库
-- user_stats.json: 由boxlive_v2.py生成的另一个数据库，与本项目无关
 
 **本项目前端部分完全由Gemini编写，后端部分介绍如下：**
 
