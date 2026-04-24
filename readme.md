@@ -1,5 +1,13 @@
 # logs
 
+## Apr 24, 2026
+
+网址：[https://yqz.mroxoroxen.com](https://yqz.mroxoroxen.com)
+
+添加boxlive_test.py以代替boxlive.py, 该程序不再通过公网0.0.0.0发布信息，而是通过127.0.0.1发送，从而拒绝Bot的无效请求。
+
+修改Nginx协议，使其支持对127.0.0.1/data的直接转接。
+
 ## Apr 23, 2026
 
 修改部分文件名称：
